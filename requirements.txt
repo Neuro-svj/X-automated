@@ -1,0 +1,6 @@
+flask
+playwright
+openai
+schedule
+pyyaml
+sqlite-utils
