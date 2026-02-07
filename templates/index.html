@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>X Autopilot Control</title>
+    <title>X Autopilot Control Center</title>
     <link rel="stylesheet" href="/static/dashboard.css">
+
     <script>
         function loadLogs() {
             fetch("/logs")
@@ -12,55 +13,185 @@
                 });
         }
 
-        setInterval(loadLogs, 5000);
+        function selectAccount(account_id) {
+            window.location.href = "/?account_id=" + account_id;
+        }
+
+        setInterval(loadLogs, 4000);
+        window.onload = loadLogs;
     </script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #111;
+            color: #eee;
+        }
+
+        button {
+            padding: 6px 12px;
+            margin: 3px;
+            cursor: pointer;
+        }
+
+        .running {
+            color: lime;
+        }
+
+        .stopped {
+            color: red;
+        }
+
+        .panel {
+            background: #1c1c1c;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 6px;
+            text-align: center;
+        }
+
+        tr:hover {
+            background-color: #222;
+        }
+
+        #logbox {
+            background: black;
+            color: lime;
+            height: 250px;
+            overflow: auto;
+            padding: 10px;
+        }
+    </style>
 </head>
+
 <body>
 
 <h1>X Autopilot Command Center</h1>
 
-<h3>Status:
-    {% if running %}
-        <span style="color:lime">RUNNING</span>
-    {% else %}
-        <span style="color:red">STOPPED</span>
-    {% endif %}
-</h3>
+<!-- ================= ACCOUNTS PANEL ================= -->
 
-<a href="/start"><button>Start</button></a>
-<a href="/stop"><button>Stop</button></a>
+<div class="panel">
+    <h2>Accounts</h2>
 
-<hr>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
 
-<h2>Live Config Editor</h2>
-<form method="POST" action="/update_config">
-    Niche: <input name="niche" value="{{ config.niche }}"><br>
-    Region: <input name="region" value="{{ config.region }}"><br>
-    Posts Per Day: <input name="posts_per_day" value="{{ config.posts_per_day }}"><br>
-    Engagement Threshold: <input name="engagement_threshold" value="{{ config.engagement_threshold }}"><br>
-    <button type="submit">Update Config</button>
-</form>
+        {% for acc in accounts %}
+        <tr>
+            <td>{{ acc.id }}</td>
+            <td>{{ acc.username }}</td>
 
-<hr>
+            <td>
+                {% if acc.running %}
+                    <span class="running">RUNNING</span>
+                {% else %}
+                    <span class="stopped">STOPPED</span>
+                {% endif %}
+            </td>
 
-<h2>Growth Metrics</h2>
-<table border="1">
-<tr><th>ID</th><th>Likes</th><th>RTs</th><th>Replies</th><th>Date</th></tr>
-{% for row in metrics %}
-<tr>
-<td>{{ row[0] }}</td>
-<td>{{ row[1] }}</td>
-<td>{{ row[2] }}</td>
-<td>{{ row[3] }}</td>
-<td>{{ row[4] }}</td>
-</tr>
-{% endfor %}
-</table>
+            <td>
+                <button onclick="selectAccount({{ acc.id }})">Select</button>
+                <a href="/start/{{ acc.id }}"><button>Start</button></a>
+                <a href="/stop/{{ acc.id }}"><button>Stop</button></a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 
-<hr>
+    <br>
+    <a href="/add_account"><button>Add New Account</button></a>
+</div>
 
-<h2>Real-Time Logs</h2>
-<pre id="logbox" style="background:black;color:lime;height:200px;overflow:auto;"></pre>
+<!-- ================= SELECTED ACCOUNT SECTION ================= -->
+
+{% if selected_account %}
+
+<div class="panel">
+    <h2>Selected Account: {{ selected_account.username }}</h2>
+
+    <h3>Status:
+        {% if selected_account.running %}
+            <span class="running">RUNNING</span>
+        {% else %}
+            <span class="stopped">STOPPED</span>
+        {% endif %}
+    </h3>
+</div>
+
+<!-- ================= CONFIG EDITOR ================= -->
+
+<div class="panel">
+    <h2>Live Config Editor</h2>
+
+    <form method="POST" action="/update_config/{{ selected_account.id }}">
+        Niche:
+        <input name="niche" value="{{ config.niche }}"><br><br>
+
+        Region:
+        <input name="region" value="{{ config.region }}"><br><br>
+
+        Posts Per Day:
+        <input name="posts_per_day" value="{{ config.posts_per_day }}"><br><br>
+
+        Engagement Threshold:
+        <input name="engagement_threshold" value="{{ config.engagement_threshold }}"><br><br>
+
+        Shadow Safe Interval:
+        <input name="shadow_safe_interval" value="{{ config.shadow_safe_interval }}"><br><br>
+
+        <button type="submit">Update Config</button>
+    </form>
+</div>
+
+<!-- ================= METRICS TABLE ================= -->
+
+<div class="panel">
+    <h2>Growth Metrics</h2>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Likes</th>
+            <th>Retweets</th>
+            <th>Replies</th>
+            <th>Date</th>
+        </tr>
+
+        {% for row in metrics %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+            <td>{{ row[3] }}</td>
+            <td>{{ row[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endif %}
+
+<!-- ================= LOG PANEL ================= -->
+
+<div class="panel">
+    <h2>Real-Time Logs</h2>
+    <pre id="logbox"></pre>
+</div>
 
 </body>
 </html>
