@@ -10,6 +10,9 @@ app = Flask(__name__)
 
 CONFIG_PATH = "config.yaml"
 LOG_PATH = "logs/bot.log"
+ACCOUNTS_DIR = "accounts"
+
+os.makedirs(ACCOUNTS_DIR, exist_ok=True)
 
 
 def get_metrics():
@@ -29,13 +32,18 @@ def save_config(data):
         yaml.dump(data, f)
 
 
+def list_accounts():
+    return os.listdir(ACCOUNTS_DIR)
+
+
 @app.route("/")
 def dashboard():
     return render_template(
         "index.html",
         metrics=get_metrics(),
         config=load_config(),
-        running=bot_state.running
+        running=bot_state.running,
+        accounts=list_accounts()
     )
 
 
@@ -76,6 +84,11 @@ def get_logs():
         content = f.read()
 
     return jsonify({"logs": content})
+
+
+@app.route("/accounts")
+def accounts():
+    return jsonify({"accounts": list_accounts()})
 
 
 if __name__ == "__main__":
