@@ -1,33 +1,82 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, request, jsonify
 import sqlite3
+import threading
+import yaml
 import os
+from automation.scheduler import start_scheduler
+from automation.state import bot_state
 
 app = Flask(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "db", "database.db")
+CONFIG_PATH = "config.yaml"
+LOG_PATH = "logs/bot.log"
 
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_metrics():
+    db = sqlite3.connect("db/database.db")
+    metrics = db.execute("SELECT * FROM metrics").fetchall()
+    db.close()
+    return metrics
+
+
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
+        return yaml.safe_load(f)
+
+
+def save_config(data):
+    with open(CONFIG_PATH, "w") as f:
+        yaml.dump(data, f)
 
 
 @app.route("/")
 def dashboard():
-    db = get_db()
-    metrics = db.execute("SELECT * FROM metrics ORDER BY collected_at DESC").fetchall()
-    db.close()
-    return render_template("dashboard.html", metrics=metrics)
+    return render_template(
+        "index.html",
+        metrics=get_metrics(),
+        config=load_config(),
+        running=bot_state.running
+    )
+
+
+@app.route("/start")
+def start_bot():
+    if not bot_state.running:
+        bot_state.running = True
+        bot_state.thread = threading.Thread(target=start_scheduler)
+        bot_state.thread.start()
+    return redirect("/")
+
+
+@app.route("/stop")
+def stop_bot():
+    bot_state.running = False
+    return redirect("/")
+
+
+@app.route("/update_config", methods=["POST"])
+def update_config():
+    config = load_config()
+
+    config["niche"] = request.form["niche"]
+    config["region"] = request.form["region"]
+    config["posts_per_day"] = int(request.form["posts_per_day"])
+    config["engagement_threshold"] = int(request.form["engagement_threshold"])
+
+    save_config(config)
+    return redirect("/")
+
+
+@app.route("/logs")
+def get_logs():
+    if not os.path.exists(LOG_PATH):
+        return jsonify({"logs": "No logs yet."})
+
+    with open(LOG_PATH, "r") as f:
+        content = f.read()
+
+    return jsonify({"logs": content})
 
 
 if __name__ == "__main__":
-    # Render injects PORT dynamically
-    port = int(os.environ.get("PORT", 5000))
-
-    # Bind to 0.0.0.0 so Render can expose it
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False  # NEVER True in production
-    )
+    app.run(host="0.0.0.0", port=10000)
