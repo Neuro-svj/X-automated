@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>X Autopilot Control</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script>
+        function loadLogs() {
+            fetch("/logs")
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("logbox").innerText = data.logs;
+                });
+        }
+
+        setInterval(loadLogs, 5000);
+    </script>
+</head>
+<body>
+
+<h1>X Autopilot Command Center</h1>
+
+<h3>Status:
+    {% if running %}
+        <span style="color:lime">RUNNING</span>
+    {% else %}
+        <span style="color:red">STOPPED</span>
+    {% endif %}
+</h3>
+
+<a href="/start"><button>Start</button></a>
+<a href="/stop"><button>Stop</button></a>
+
+<hr>
+
+<h2>Live Config Editor</h2>
+<form method="POST" action="/update_config">
+    Niche: <input name="niche" value="{{ config.niche }}"><br>
+    Region: <input name="region" value="{{ config.region }}"><br>
+    Posts Per Day: <input name="posts_per_day" value="{{ config.posts_per_day }}"><br>
+    Engagement Threshold: <input name="engagement_threshold" value="{{ config.engagement_threshold }}"><br>
+    <button type="submit">Update Config</button>
+</form>
+
+<hr>
+
+<h2>Growth Metrics</h2>
+<table border="1">
+<tr><th>ID</th><th>Likes</th><th>RTs</th><th>Replies</th><th>Date</th></tr>
+{% for row in metrics %}
+<tr>
+<td>{{ row[0] }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+<td>{{ row[3] }}</td>
+<td>{{ row[4] }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<hr>
+
+<h2>Real-Time Logs</h2>
+<pre id="logbox" style="background:black;color:lime;height:200px;overflow:auto;"></pre>
+
+</body>
+</html>
