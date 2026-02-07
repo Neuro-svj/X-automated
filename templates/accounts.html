@@ -1,0 +1,12 @@
+<h2>Accounts</h2>
+
+<form method="POST" action="/add_account">
+    Username: <input name="username">
+    <button type="submit">Add Account</button>
+</form>
+
+<ul>
+{% for acc in accounts %}
+    <li>{{ acc }} - Logged In</li>
+{% endfor %}
+</ul>
