@@ -1,0 +1,45 @@
+account:
+  username: your_x_username
+  region: us
+  timezone: UTC
+
+posting:
+  max_posts_per_day: 5
+  max_threads_per_day: 1
+  min_interval_minutes: 30
+  max_interval_minutes: 90
+
+niches:
+  - crypto
+  - smma
+  - tech
+  - finance
+
+content:
+  styles:
+    - viral
+    - educational
+    - authority
+    - engagement
+  hashtags:
+    enabled: true
+    max: 2
+
+threads:
+  enabled: true
+  max_tweets: 5
+
+reply_guy:
+  enabled: true
+  max_replies_per_day: 3
+  avoid_links: true
+
+safety:
+  scroll_before_action: true
+  random_typing_delay: true
+  no_duplicate_formats: true
+
+learning:
+  enable_feedback_loop: true
+  low_engagement_threshold: 5
+  bias_towards: threads
